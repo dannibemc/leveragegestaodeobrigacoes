@@ -10,5 +10,4 @@ cookie:
   name: 'leverage_cookie'
   key: 'CHAVE_SUPER_SECRETA_123'
   expiry_days: 30
-preauthorized:
   emails: []
