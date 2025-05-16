@@ -2,7 +2,7 @@ import streamlit as st
 import streamlit_authenticator as stauth
 import pandas as pd
 
-# 1) Carrega segredos
+# 1) Carrega as credenciais dos Secrets (TOML) do Streamlit Cloud
 secrets = st.secrets
 
 # 2) Inicializa o Authenticator
@@ -10,16 +10,16 @@ auth = stauth.Authenticate(
     secrets["credentials"],
     secrets["cookie"]["name"],
     secrets["cookie"]["key"],
-    secrets["cookie"]["expiry_days"]
+    secrets["cookie"]["expiry_days"],
 )
 
-# 3) Login (location: 'main', 'sidebar' ou 'unrendered')
+# 3) Executa o login (location: 'main', 'sidebar' ou 'unrendered')
 name, status, user = auth.login("Login", "main")
 
 if status:
     auth.logout("Logout", "main")
     st.write(f"Olá, **{name}**")
-    st.title("Leverage - Gestão de Obrigações")
+    st.title("Leverage – Gestão de Obrigações")
 
     # 4) Upload de Excel
     st.header("Upload de planilha de obrigações")
@@ -43,12 +43,12 @@ if status:
         st.subheader("Obrigações Estruturadas")
         st.json(obr)
 
-    # 6) Dashboard básico
+    # 6) Dashboard simples
     st.header("Dashboard")
     total = len(df) if "df" in locals() else 0
-    col1, col2 = st.columns(2)
-    col1.metric("Total de Obrigações", total)
-    col2.metric("Total provisionado (R$)", "R$ 180.000,00")
+    c1, c2 = st.columns(2)
+    c1.metric("Total de Obrigações", total)
+    c2.metric("Total Provisionado (R$)", "R$ 180 000,00")
 
 elif status is False:
     st.error("Usuário ou senha inválidos")
