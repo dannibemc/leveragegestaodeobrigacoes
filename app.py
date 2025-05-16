@@ -2,64 +2,60 @@ import streamlit as st
 import pandas as pd
 import datetime
 
-# ---- 1) Autenticação simples ----
-# Carrega usuário/senha de st.secrets (deixe em TOML, veja abaixo)
-VALID_USER = st.secrets["login"]["username"]
-VALID_PWD  = st.secrets["login"]["password"]
+# Autenticação simples (fixa)
+USUARIO = "admin"
+SENHA = "senha123"
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+# Login
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
 
-# Se não autenticado, mostra formulário de login
-if not st.session_state.authenticated:
-    st.title("🔒 Login")
-    u = st.text_input("Usuário")
-    p = st.text_input("Senha", type="password")
+if not st.session_state.autenticado:
+    st.title("🔒 Por favor, faça login")
+    usuario_input = st.text_input("Usuário")
+    senha_input = st.text_input("Senha", type="password")
     if st.button("Entrar"):
-        if u == VALID_USER and p == VALID_PWD:
-            st.session_state.authenticated = True
+        if usuario_input == USUARIO and senha_input == SENHA:
+            st.session_state.autenticado = True
             st.success("Autenticado com sucesso!")
             st.experimental_rerun()
         else:
             st.error("Usuário ou senha incorretos")
     st.stop()
 
-# ---- 2) Após autenticar, aparece a aplicação ----
-st.sidebar.title("Leverage | Plataforma Inteligente")
-page = st.sidebar.radio("Menu", ["Provisionamento", "IA para Obrigações", "Alertas", "Relatórios", "Crédito"])
+# Após login, mostra a plataforma
+st.sidebar.title("Leverage | Plataforma Simplificada")
+menu = st.sidebar.radio("Menu", ["Provisões", "IA", "Alertas", "Relatórios", "Crédito"])
 
-if page == "Provisionamento":
+if menu == "Provisões":
     st.header("Dashboard de Provisões")
-    st.write("Faça upload de uma planilha com suas obrigações:")
-    arquivo = st.file_uploader("Selecione um .xlsx", type="xlsx")
-    if arquivo:
-        df = pd.read_excel(arquivo)
-        st.subheader("Dados Carregados")
+    uploaded_file = st.file_uploader("Faça upload da planilha de obrigações", type=["xlsx"])
+    if uploaded_file:
+        df = pd.read_excel(uploaded_file)
+        st.subheader("Dados carregados")
         st.dataframe(df)
 
-        # Cálculos simples
-        total_obr = len(df)
-        provisionado = df["Valor"].sum() if "Valor" in df.columns else 0
-        st.write(f"**Nº de obrigações:** {total_obr}")
-        st.write(f"**Total provisionado:** R$ {provisionado:,.2f}")
+        total_obrigacoes = len(df)
+        total_valor = df["Valor"].sum() if "Valor" in df.columns else 0
+        st.write(f"Número de obrigações: {total_obrigacoes}")
+        st.write(f"Valor total provisionado: R$ {total_valor:,.2f}")
 
         if st.button("Gerar Ação Sugerida"):
-            st.info("🔍 Ação sugerida (mock): Revisar contratos com prazo próximo ou em atraso.")
-    else:
-        st.info("📥 Carregue a planilha para ver o dashboard.")
+            st.info("Revisar contratos com vencimento próximo ou atrasado.")
 
-elif page == "IA para Obrigações":
-    st.header("IA para Extração de Obrigações")
-    st.write("Funcionalidade em desenvolvimento…")
+elif menu == "IA":
+    st.header("IA para Obrigações")
+    st.write("Funcionalidade em desenvolvimento...")
 
-elif page == "Alertas":
+elif menu == "Alertas":
     st.header("Alertas de Vencimento")
-    st.write("Funcionalidade em desenvolvimento…")
+    st.write("Funcionalidade em desenvolvimento...")
 
-elif page == "Relatórios":
+elif menu == "Relatórios":
     st.header("Geração de Relatórios")
-    st.write("Funcionalidade em desenvolvimento…")
+    st.write("Funcionalidade em desenvolvimento...")
 
-elif page == "Crédito":
-    st.header("Upload e Análise de Crédito (Serasa)")
-    st.write("Funcionalidade em desenvolvimento…")
+elif menu == "Crédito":
+    st.header("Análise de Crédito")
+    st.write("Funcionalidade em desenvolvimento...")
+
