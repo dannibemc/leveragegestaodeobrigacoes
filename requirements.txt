@@ -1,4 +1,5 @@
-streamlit
-streamlit-authenticator
+streamlit>=1.25.0
+streamlit-authenticator>=0.4.3
 pyyaml
 pandas
+openpyxl
