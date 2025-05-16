@@ -1,56 +1,75 @@
 import streamlit as st
-import streamlit_authenticator as stauth
 import pandas as pd
+import datetime
+import requests  # Para simular a API de IA
 
-# 1) Carrega as credenciais dos Secrets (TOML) do Streamlit Cloud
-secrets = st.secrets
+# --- Autenticação (simplificada) ---
+def autenticar():
+    usuario = st.sidebar.text_input("Usuário")
+    senha = st.sidebar.text_input("Senha", type="password")
+    if usuario == "admin" and senha == "senha123":
+        st.session_state["autenticado"] = True
+        st.sidebar.success("Autenticado!")
+    else:
+        st.session_state["autenticado"] = False
+        if senha:
+            st.sidebar.error("Usuário ou senha incorretos")
 
-# 2) Inicializa o Authenticator
-auth = stauth.Authenticate(
-    secrets["credentials"],
-    secrets["cookie"]["name"],
-    secrets["cookie"]["key"],
-    secrets["cookie"]["expiry_days"],
-)
+# --- Funções de apoio ---
+def simular_analise_risco(data_vencimento):
+    """Simula uma chamada à API de IA para análise de risco."""
+    hoje = datetime.date.today()
+    dias_ate_vencimento = (data_vencimento - hoje).days
+    # Simulação simples: quanto mais próximo do vencimento, maior o risco
+    risco = min(100, max(0, 100 - dias_ate_vencimento * 2))
+    return risco
 
-# 3) Executa o login (location: 'main', 'sidebar' ou 'unrendered')
-name, status, user = auth.login("Login", "main")
+# --- Interface do usuário ---
+st.title("Leverage - Plataforma Simplificada")
 
-if status:
-    auth.logout("Logout", "main")
-    st.write(f"Olá, **{name}**")
-    st.title("Leverage – Gestão de Obrigações")
+if "autenticado" not in st.session_state:
+    autenticar()
 
-    # 4) Upload de Excel
-    st.header("Upload de planilha de obrigações")
-    excel = st.file_uploader("Selecione um arquivo .xlsx", type=["xlsx"])
-    if excel:
-        df = pd.read_excel(excel)
-        st.subheader("Dados brutos")
-        st.dataframe(df)
+if st.session_state.get("autenticado"):
+    st.sidebar.success("Autenticado")
+    # --- Upload de dados ---
+    st.header("Upload de Obrigações")
+    uploaded_file = st.file_uploader("Selecione o arquivo Excel", type=["xlsx"])
 
-        # 5) Estruturação das obrigações
-        obr = []
-        for _, r in df.iterrows():
-            obr.append({
-                "ParteDevedora": "Devedora",
-                "Documento":     r.get("Documento",     "Não especificado"),
-                "Cláusula":      r.get("Cláusula",      "Não especificado"),
-                "Resumo":        r.get("Resumo",        "Não especificado"),
-                "DataOrigem":    r.get("DataOrigem",    "Não especificado"),
-                "Periodicidade": r.get("Periodicidade", "Não especificado"),
-            })
-        st.subheader("Obrigações Estruturadas")
-        st.json(obr)
+    if uploaded_file is not None:
+        try:
+            df = pd.read_excel(uploaded_file)
+            st.subheader("Dados Carregados")
+            st.dataframe(df)
 
-    # 6) Dashboard simples
-    st.header("Dashboard")
-    total = len(df) if "df" in locals() else 0
-    c1, c2 = st.columns(2)
-    c1.metric("Total de Obrigações", total)
-    c2.metric("Total Provisionado (R$)", "R$ 180 000,00")
+            # --- Processamento dos dados ---
+            df["Data de Vencimento"] = pd.to_datetime(df["Data de Vencimento"], errors='coerce')
+            df = df.dropna(subset=["Data de Vencimento"])  # Remove linhas com datas inválidas
 
-elif status is False:
-    st.error("Usuário ou senha inválidos")
+            # --- Dashboard ---
+            st.header("Dashboard")
+            num_obrigacoes = len(df)
+            valor_total = df["Valor"].sum() if "Valor" in df.columns else 0
+            col1, col2, col3 = st.columns(3)
+            col1.metric("Número de Obrigações", num_obrigacoes)
+            col2.metric("Valor Total", f"R$ {valor_total:,.2f}")
+            # --- Alertas e análise de risco ---
+            st.header("Alertas e Análise de Risco")
+            for index, row in df.iterrows():
+                data_vencimento = row["Data de Vencimento"].date()
+                hoje = datetime.date.today()
+                if data_vencimento < hoje:
+                    st.warning(f"⚠️ Obrigação Vencida: {row['Descrição']} - Vencimento em {data_vencimento}")
+                elif (data_vencimento - hoje).days <= 7:
+                    st.warning(f"⚠️ Vencimento Próximo: {row['Descrição']} - Vencimento em {data_vencimento}")
+
+                # --- Chamada para a API de IA (simulada) ---
+                risco = simular_analise_risco(data_vencimento)
+                st.write(f"Análise de Risco para {row['Descrição']}: {risco:.2f}%")
+
+        except Exception as e:
+            st.error(f"Erro ao processar o arquivo: {e}")
+
 else:
-    st.warning("Digite usuário e senha")
+    st.sidebar.warning("Por favor, faça login.")
+    st.stop()
